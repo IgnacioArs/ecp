@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")   // <- esto ES OBLIGATORIO
+  // relationMode = "foreignKeys"  // opcional, puedes dejarlo comentado
+}
+
+model Role {
+  idRole        Int       @id @default(autoincrement()) @map("id_role")
+  nombreRol     String    @unique @map("nombre_rol") @db.VarChar(50)
+  fechaCreacion DateTime  @default(now()) @map("fecha_creacion")
+  usuarios      Usuario[]
+
+  @@map("roles")
+}
+
+model Usuario {
+  idUsuario          Int         @id @default(autoincrement()) @map("id_usuario")
+  nombre             String      @db.VarChar(100)
+  apellido           String      @db.VarChar(100)
+  email              String      @unique @db.VarChar(100)
+  rut                String      @unique @db.VarChar(100)
+  password           String      @db.VarChar(255)
+  telefono           Int
+  direccion          String      @db.VarChar(100)
+  roleId             Int?        @map("role_id")
+  creadoPorIdUsuario Int?        @map("creado_por_id_usuario")
+  fechaCreacion      DateTime    @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime    @updatedAt @map("fecha_actualizacion")
+  polizas            Poliza[]
+  precioPiso         PrecioPiso?
+  role               Role?       @relation(fields: [roleId], references: [idRole])
+  ventas             Venta[]
+
+  @@index([roleId], map: "usuarios_role_id_fkey")
+  @@map("usuarios")
+}
+
+model PrecioPiso {
+  idPrecioPiso       Int      @id @default(autoincrement()) @map("id_precio_piso")
+  porcentaje         Decimal  @unique @db.Decimal(10, 2)
+  usuarioId          Int      @unique @map("usuario_id")
+  fechaCreacion      DateTime @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime @updatedAt @map("fecha_actualizacion")
+  usuario            Usuario  @relation(fields: [usuarioId], references: [idUsuario])
+  ventas             Venta[]
+
+  @@map("precio_piso")
+}
+
+model Poliza {
+  idPoliza                   Int       @id @default(autoincrement()) @map("id_poliza")
+  sCiudadDestino             String?   @map("sCiudad_destino") @db.VarChar(100)
+  sCodVehiculo               String?   @map("sCod_vehiculo") @db.VarChar(50)
+  sIdConvenioDetalle         String?   @map("sId_convenio_detalle") @db.VarChar(50)
+  dFechaIniVigencia          DateTime? @map("dFecha_ini_vigencia") @db.Date
+  sIdentificacionProp        String?   @db.VarChar(50)
+  sNombreProp                String?   @db.VarChar(100)
+  nPrecioEmpoderado          Decimal?  @map("nPrecio_empoderado") @db.Decimal(10, 2)
+  sApePaternoProp            String?   @map("sApe_paternoProp") @db.VarChar(100)
+  sApeMaternoProp            String?   @map("sApe_maternoProp") @db.VarChar(100)
+  nNacionalidadProp          String?   @db.VarChar(100)
+  sPaisOrigenVehiculo        String?   @map("sPais_OrigenVehiculo") @db.VarChar(100)
+  sMail                      String?   @db.VarChar(100)
+  sTipoVehiculo              String?   @map("sTipo_vehiculo") @db.VarChar(50)
+  sPatente                   String?   @db.VarChar(20)
+  sMarca                     String?   @db.VarChar(100)
+  sModelo                    String?   @db.VarChar(100)
+  sAnno                      String?   @db.VarChar(4)
+  sMotor                     String?   @db.VarChar(100)
+  telefonoCelularPropietario String?   @map("telefono_celular_propietario") @db.VarChar(20)
+  codigoAreaPropietario      String?   @map("codigo_area_propietario") @db.VarChar(20)
+  usuarioId                  Int?      @map("usuario_id")
+  fechaCreacion              DateTime  @default(now()) @map("fecha_creacion")
+  fechaActualizacion         DateTime  @updatedAt @map("fecha_actualizacion")
+  usuario                    Usuario?  @relation(fields: [usuarioId], references: [idUsuario])
+  ventas                     Venta[]
+
+  @@index([usuarioId], map: "poliza_usuario_id_fkey")
+  @@map("poliza")
+}
+
+model Venta {
+  idVenta            Int         @id @default(autoincrement()) @map("id_venta")
+  usuarioId          Int?        @map("usuario_id")
+  polizaId           Int?        @map("poliza_id")
+  precioPisoId       Int?        @map("precio_piso_id")
+  precioBase         Decimal     @map("precio_base") @db.Decimal(10, 2)
+  precioVenta        Decimal     @map("precio_venta") @db.Decimal(10, 2)
+  fechaCreacion      DateTime    @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime    @updatedAt @map("fecha_actualizacion")
+  poliza             Poliza?     @relation(fields: [polizaId], references: [idPoliza])
+  precioPiso         PrecioPiso? @relation(fields: [precioPisoId], references: [idPrecioPiso])
+  usuario            Usuario?    @relation(fields: [usuarioId], references: [idUsuario])
+
+  @@index([polizaId], map: "ventas_poliza_id_fkey")
+  @@index([precioPisoId], map: "ventas_precio_piso_id_fkey")
+  @@index([usuarioId], map: "ventas_usuario_id_fkey")
+  @@map("ventas")
+}
